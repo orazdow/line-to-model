@@ -1,28 +1,16 @@
 import {solids, polyhedra, models} from './model.js';
 import {loadObj, edgeList} from './loader.js';
 import * as g from './render.js';
-import lines_ from './lines-z.js';
+import lines from './lines.js';
 
 const ww = 500, wh = 500;
 const canvas = document.getElementById('canv');
 const ctx = canvas.getContext('2d');
 canvas.width = ww; canvas.height = wh;
 
-let lines = lines_.lines
-// console.log(lines)
-let lines_v = []
-let lines_e = []
-let line_idx = 0
-for(let el of lines){
-	let e = []
-	for(let vec of el){
-		lines_v.push(vec)
-		e.push(line_idx)
-		line_idx++
-	}
-	lines_e.push(e)
-}
-for(let v of lines_v){
+let obj_v = lines.v;
+let obj_i = lines.e;
+for(let v of obj_v){
 		v[0] *= 1.5
 		v[1] *= 1.5
 }
@@ -34,10 +22,6 @@ let obj_i = obj.indices.v;
 obj_i = edgeList(obj_i);
 console.log(obj_i.length);
 */
-
-let obj_v = lines_v;
-let obj_i = lines_e;
-
 
 let mouse = {x:0,y:0};
 canvas.onmousemove = (e)=>{
