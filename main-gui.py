@@ -7,7 +7,7 @@ import os
 
 g = SimpleNamespace(
 	fname = './test.jpg',
-	fnames = (),
+	fnames = [],
 	img = None,
 	imgdata = None,
 	timg = None,
@@ -33,9 +33,9 @@ def init(g):
 def fit_image(img, dimensions):
 	img_dim = np.flip(img.shape[:2])
 	scale = 1
-	if (dimensions[0] <= dimensions[1]):
-		scale = dimensions[0]/img_dim[1]
-	else: scale = dimensions[1]/img_dim[0]
+	if(dimensions[0] <= dimensions[1]):
+		scale = dimensions[0]/img_dim[0]
+	else: scale = dimensions[1]/img_dim[1]
 	img_dim[0]*=scale
 	img_dim[1]*=scale
 	return cv.resize(img, img_dim)	
@@ -92,7 +92,7 @@ def dilate(mat, k, i):
 def proc_canny(mat, t1, t2):
 	return cv.cvtColor(cv.Canny(mat, int(t1), int(t2)), cv.COLOR_GRAY2BGR)
 
-def handle_edit(tag=""):
+def handle_edit(resize=False):
 	mat = g.img.copy()
 	if(g.gbool):
 		mat = gaussian(mat, dpg.get_value("gbar_k"), dpg.get_value("gbar_s"))
@@ -103,10 +103,13 @@ def handle_edit(tag=""):
 	if(g.hbool):
 		mat = proc_tone(mat, dpg.get_value("hbar"), dpg.get_value("sbar"), 0, dpg.get_value("ibox")) 
 	g.timg = mat
-	update_preview(mat)	
+	if not resize:
+		update_preview(mat)
+	else:
+		resize_window_img("img_window", "tex_tag", win_dimensions, g.timg)	
 
 def afteredit_cb(sender, data):
-	handle_edit(data)
+	handle_edit()
 
 def box_cb(sender, data):
 	if(sender == "gbox"):
@@ -117,11 +120,12 @@ def box_cb(sender, data):
 		g.mbool = data
 	elif(sender == "hbox"):
 		g.hbool = data
-	handle_edit(sender)
+	handle_edit()
 
 def viewport_resize_cb(sender, data):
-	win_dimensions[0] = data[2:][0]
-	win_dimensions[1] = data[2:][1]
+	d = dpg.get_item_configuration("img_window")
+	win_dimensions[0] = d['width']
+	win_dimensions[1] = d['height']
 	resize_window_img("img_window", "tex_tag", win_dimensions, g.timg)
 
 def apply_rev_cb(sender, data):
@@ -161,7 +165,7 @@ def load_file(path):
 		g.imgdata = flat_img(g.img)
 		g.timg = g.img.copy()
 		g.rimg = g.img.copy()
-		handle_edit()
+		handle_edit(True)
 		dpg.set_value("file_text", os.path.basename(g.fname))
 		print(g.fname, 'loaded')
 
@@ -199,7 +203,7 @@ init(g)
 dpg.create_context()
 dpg.create_viewport(title='img gui', width=win_dimensions[0], height=win_dimensions[1])
 
-with dpg.item_handler_registry(tag="edit_handler") as handler:
+with dpg.item_handler_registry(tag="edit_handler"):
 	dpg.add_item_deactivated_after_edit_handler(callback=afteredit_cb)
 
 with dpg.texture_registry(show=False):	

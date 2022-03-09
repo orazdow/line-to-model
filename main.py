@@ -24,13 +24,12 @@ def make_indices(lines):
 			_v.append(v)
 			e.append(idx)
 			idx += 1
-		_e.append(e)
+		if(len(e) > 0): _e.append(e)
 	return {'v':_v, 'e':_e}
 
 img = cv.imread('lines.jpg', cv.IMREAD_GRAYSCALE)
 if(img.shape[0] > 800):
 	img = cv.resize(img,  (int(.7*img.shape[1]), int(.7*img.shape[0])))
-img = cv.threshold(img, 127, 255, cv.THRESH_BINARY)[1]
 img = cv.threshold(img, 127, 255, cv.THRESH_BINARY)[1]
 contours, h = cv.findContours(img, cv.RETR_LIST, 3)
 mat = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
