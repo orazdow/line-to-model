@@ -164,7 +164,12 @@ function canvasrender(s, t){
     s.ctx.strokeStyle = s.colors.stroke;
     s.ctx.fillRect(0,0,s.x, s.y);
     s.vertices = s.r_mat ? mat_mul_4(s.vertices, s.r_mat) : s.vertices; 
-    let mat = mat_mul_4(s.vertices, s.t_mat || idmat);  
+    let mat = mat_mul_4(s.vertices, s.t_mat || idmat); 
+    // let ii = 0;
+    // proc_rows(mat, (vec)=>{
+    // 	ii++;
+    // 	vec[2] = vec[2]*(.6+.4*cos(.2*t*Math.log(ii*.2)))+.5;
+    // })
     if(s.v_mat) mat = mat_mul_4(mat, s.v_mat);
     if(s.p_mat) mat = mat_mul_4w(mat, s.p_mat);
 

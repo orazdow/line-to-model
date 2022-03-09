@@ -11,17 +11,15 @@ canvas.width = ww; canvas.height = wh;
 let obj_v = lines.v;
 let obj_i = lines.e;
 for(let v of obj_v){
-		v[0] *= 1.5
-		v[1] *= 1.5
+	v[0] *= 1.5
+	v[1] *= 1.5
 }
 
-/*
-let obj = loadObj(Object.values(polyhedra)[2], 1.4);
-let obj_v = obj.vertices.v;
-let obj_i = obj.indices.v;
-obj_i = edgeList(obj_i);
-console.log(obj_i.length);
-*/
+// let obj = loadObj(Object.values(polyhedra)[3], 2.8);
+// let obj_v = obj.vertices.v;
+// let obj_i = obj.indices.v;
+// obj_i = edgeList(obj_i);
+// console.log(obj_i.length);
 
 let mouse = {x:0,y:0};
 canvas.onmousemove = (e)=>{
@@ -44,10 +42,11 @@ document.body.onkeydown = (e)=>{
     if(e.key === " ") scene.r_mat = scene.r_mat ? 0 : rot;
 }
 
+let t = 0;
 window.setInterval(()=>{
         translate[3][0] = mouse.x*3;
         translate[3][1] = mouse.y*3; 
         translate[3][2] = 1;  
         scene.v_mat = g.lookAt( [-mouse.x*5, -mouse.y*5, -1.], [0,0, .5], .0);
-        g.canvasrender(scene, 0);
+        g.canvasrender(scene, (t++)*.1);
 }, 30);

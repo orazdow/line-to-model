@@ -34,8 +34,8 @@ def fit_image(img, dimensions):
 	img_dim = np.flip(img.shape[:2])
 	scale = 1
 	if (dimensions[0] <= dimensions[1]):
-		scale = dimensions[0]/img_dim[0]
-	else: scale = dimensions[1]/img_dim[1]
+		scale = dimensions[0]/img_dim[1]
+	else: scale = dimensions[1]/img_dim[0]
 	img_dim[0]*=scale
 	img_dim[1]*=scale
 	return cv.resize(img, img_dim)	
@@ -56,7 +56,7 @@ def flat_img(mat):
 	return np.true_divide(np.asfarray(np.ravel(np.flip(mat,2)), dtype='f'), 255.0)
 
 def update_preview(mat):
-	img = fit_image(mat, win_dimensions)	
+	img = fit_image(mat, win_dimensions)
 	imgdata = flat_img(img)
 	dpg.set_value("tex_tag", imgdata)
 
@@ -152,14 +152,18 @@ def save_cb():
 		print(file, 'saved')
 	
 def load_file(path):
-	g.fname = path
-	g.img = cv.imread(g.fname)
-	g.imgdata = flat_img(g.img)
-	g.timg = g.img.copy()
-	g.rimg = g.img.copy()
-	handle_edit()
-	dpg.set_value("file_text", os.path.basename(g.fname))
-	print(g.fname, 'loaded')
+	img = cv.imread(path)
+	if img is None:
+		print('load error', path)
+	else:
+		g.fname = path
+		g.img = img
+		g.imgdata = flat_img(g.img)
+		g.timg = g.img.copy()
+		g.rimg = g.img.copy()
+		handle_edit()
+		dpg.set_value("file_text", os.path.basename(g.fname))
+		print(g.fname, 'loaded')
 
 def dir_callback(sender, data):
 	try:
@@ -191,7 +195,7 @@ def load_dirfile(sender, data):
 	g.fname = g.fnames[g.dir_idx]
 	load_file(g.fname)
 
-init(g)	
+init(g)
 dpg.create_context()
 dpg.create_viewport(title='img gui', width=win_dimensions[0], height=win_dimensions[1])
 
