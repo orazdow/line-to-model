@@ -27,6 +27,17 @@ def make_indices(lines):
 		if(len(e) > 0): _e.append(e)
 	return {'v':_v, 'e':_e}
 
+def make_obj(_v, _e, sym):
+	obj = ''
+	for v in _v:
+		s = 'v '+' '.join([str(el) for el in v[:3]])
+		obj += s+'\n'
+	obj += 's off\n'
+	for e in _e:
+		s = sym+' '+' '.join([str(el+1) for el in e])
+		obj += s+'\n'
+	return obj
+	
 img = cv.imread('lines.jpg', cv.IMREAD_GRAYSCALE)
 if(img.shape[0] > 800):
 	img = cv.resize(img,  (int(.7*img.shape[1]), int(.7*img.shape[0])))
