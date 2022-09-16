@@ -1,0 +1,4 @@
+dearpygui
+easygui
+opencv-python
+numpy
