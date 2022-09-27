@@ -38,14 +38,14 @@ def make_obj(_v, _e, sym):
 		obj += s+'\n'
 	return obj
 	
-img = cv.imread('lines.jpg', cv.IMREAD_GRAYSCALE)
+img = cv.imread('lamp_l.jpg', cv.IMREAD_GRAYSCALE)
 if(img.shape[0] > 800):
 	img = cv.resize(img,  (int(.7*img.shape[1]), int(.7*img.shape[0])))
 img = cv.threshold(img, 127, 255, cv.THRESH_BINARY)[1]
 contours, h = cv.findContours(img, cv.RETR_LIST, 3)
 mat = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
 
-zpath = 'lines-z.jpg'
+zpath = 'lamp.jpg'
 zimg = cv.imread(zpath)
 zimg = cv.resize(zimg,  (img.shape[1], img.shape[0]))
 cv.imshow('zimg', zimg)
@@ -63,7 +63,7 @@ for c in contours:
 
 obj = json.dumps(make_indices(lines), indent = 4)
 obj = 'const lines = '+obj+'\nexport default lines;'
-with open("lines.js", "w") as outfile:
+with open("serve/lines.js", "w") as outfile:
     outfile.write(obj)
 
 cv.imshow('img', mat)

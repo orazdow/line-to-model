@@ -3,9 +3,8 @@ import easygui
 import cv2 as cv
 import numpy as np
 from types import SimpleNamespace
-import atexit
 import os
-import proc_model as m
+
 
 g = SimpleNamespace(
 	fname = './test.jpg',
@@ -23,7 +22,7 @@ g = SimpleNamespace(
 
 win_dimensions = [600, 600]
 
-def init(g):
+def init():
 	g.img = cv.imread(g.fname)
 	if g.img is None:
 		g.img = np.zeros((20, 20, 3), np.uint8)
@@ -199,103 +198,3 @@ def load_dirfile(sender, data):
 	g.dir_idx = (g.dir_idx+inc)%len(g.fnames)
 	g.fname = g.fnames[g.dir_idx]
 	load_file(g.fname)
-
-def exit_callback():
-	cv.destroyAllWindows()
-	if m.g.server: 
-		m.g.server.shutdown()
-	for t in m.g.threads:
-		t.join()
-
-init(g)
-dpg.create_context()
-dpg.create_viewport(title='img gui', width=win_dimensions[0], height=win_dimensions[1])
-
-with dpg.item_handler_registry(tag="edit_handler"):
-	dpg.add_item_deactivated_after_edit_handler(callback=afteredit_cb)
-
-with dpg.texture_registry(show=False):	
-	dpg.add_raw_texture(g.img.shape[1], g.img.shape[0], g.imgdata, tag="tex_tag", format=dpg.mvFormat_Float_rgb)
-
-with dpg.window(tag="img_window"):
-	dpg.add_image("tex_tag")
-	dpg.set_primary_window("img_window", True)
-
-with dpg.window(tag="ctlwindow", label="", no_close=True, min_size=(250,250)):
-	with dpg.tab_bar(tag="tabbar"):
-
-		with dpg.tab(tag="tb1", label="Image Proc"):
-			with dpg.collapsing_header(label="gaussian blur", tag="gmenu", default_open=True):
-				dpg.add_checkbox(label="on", tag="gbox", callback=box_cb)
-				dpg.add_slider_int(label="ksize", tag="gbar_k", default_value=0,  max_value=21)
-				dpg.add_slider_float(label="sigma", tag="gbar_s", default_value=0.,  max_value=6)
-
-			with dpg.collapsing_header(label="canny", tag="cmenu", default_open=True):
-				dpg.add_checkbox(label="on", tag="cbox", callback=box_cb)
-				dpg.add_slider_float(label="thresh_l", tag="cbar1", default_value=50.,  max_value=200)
-				dpg.add_slider_float(label="thresh_h", tag="cbar2", default_value=100.,  max_value=200)
-
-			with dpg.collapsing_header(label="dilate", tag="mmenu", default_open=True):
-				with dpg.group(horizontal=True):
-					dpg.add_checkbox(label="on", tag="mbox", callback=box_cb)
-				dpg.add_slider_int(label="kernel", tag="mbark", min_value=2, max_value=9)
-				dpg.add_slider_int(label="iterations", tag="mbari", min_value=1, max_value=8)
-
-			with dpg.collapsing_header(label="tone", tag="hmenu", default_open=True):
-				with dpg.group(horizontal=True):
-					dpg.add_checkbox(label="on", tag="hbox", callback=box_cb)
-					dpg.add_checkbox(label="invert", tag="ibox")
-				dpg.add_slider_float(label="hue", tag="hbar", default_value=0., max_value=1)
-				dpg.add_slider_float(label="sat", tag="sbar", default_value=1., max_value=1)
-
-			dpg.add_separator()
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="apply", tag="apply", callback=apply_rev_cb)
-				dpg.add_button(label="revert", tag="revert", callback=apply_rev_cb)
-
-			dpg.add_separator()
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="file", tag="loadfilebutton", callback=file_callback)
-				dpg.add_button(label="dir", tag="loaddirbutton", callback=dir_callback)
-				with dpg.group(horizontal=True, tag="dirnav", show=False):
-					dpg.add_button(label="<<", tag="lfile", callback=load_dirfile)
-					dpg.add_button(label=">>", tag="rfile", callback=load_dirfile)
-				dpg.add_text("", tag="file_text")
-				dpg.set_value("file_text",os.path.basename(g.fname))
-			dpg.add_button(label="save", tag="savebutton", callback=save_cb)
-
-		with dpg.tab(tag="tb2", label="Model Gen"):
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="load img file", tag="m_loadfilebutton", callback=m.file_callback)
-				dpg.add_text("", tag="m_file_text")
-			with dpg.group(horizontal=True, tag="zbutton", show=False):
-				dpg.add_button(label="load z-img file", tag="m_zloadfilebutton", callback=m.file_callback)
-				dpg.add_text("", tag="m_zfile_text")
-			with dpg.group(horizontal=True, tag="pbutton", show=False):
-				dpg.add_button(label="proc contours", callback=m.proc_contours, tag="pcontbutton")
-			with dpg.group(horizontal=True, tag="serve", show=True):
-				dpg.add_button(label="serve model", callback=m.serve)
-				dpg.add_text("", tag="serve_text")
-			with dpg.group(horizontal=True, tag="savelines", show=False):
-				dpg.add_button(label="save line model", callback=m.save_model)
-			with dpg.group(horizontal=True, tag="savelineimg", show=False):
-				dpg.add_button(label="save line image", callback=m.save_img)
-			with dpg.group(horizontal=True):
-				dpg.add_text("", tag="line_model_text")
-
-dpg.setup_dearpygui()
-dpg.show_viewport()
-dpg.bind_item_handler_registry("gbar_k", "edit_handler")
-dpg.bind_item_handler_registry("gbar_s", "edit_handler")
-dpg.bind_item_handler_registry("hbar", "edit_handler")
-dpg.bind_item_handler_registry("sbar", "edit_handler")
-dpg.bind_item_handler_registry("ibox", "edit_handler")
-dpg.bind_item_handler_registry("cbar1", "edit_handler")
-dpg.bind_item_handler_registry("cbar2", "edit_handler")
-dpg.bind_item_handler_registry("mbark", "edit_handler")
-dpg.bind_item_handler_registry("mbari", "edit_handler")
-dpg.set_exit_callback(exit_callback)
-dpg.set_viewport_resize_callback(viewport_resize_cb)
-dpg.set_frame_callback(frame=4, callback=viewport_resize_cb)
-dpg.start_dearpygui()
-dpg.destroy_context()
