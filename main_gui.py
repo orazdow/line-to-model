@@ -6,9 +6,10 @@ from types import SimpleNamespace
 import atexit
 import os
 import proc_model as m
+from glob import glob
 
 g = SimpleNamespace(
-	fname = './test.jpg',
+	fname = '',
 	fnames = [],
 	img = None,
 	imgdata = None,
@@ -20,14 +21,16 @@ g = SimpleNamespace(
 	hbool = False,
 	mbool = False,
 )
+glob['g'] = g
 
 win_dimensions = [600, 600]
 
 def init(g):
-	g.img = cv.imread(g.fname)
+	if g.fname:
+		g.img = cv.imread(g.fname)
 	if g.img is None:
 		g.img = np.zeros((20, 20, 3), np.uint8)
-		print('load error:', g.fname, 'using empty image')
+		print('no default image: using empty image')
 	g.imgdata = flat_img(g.img)
 	g.timg = g.img.copy()
 	g.rimg = g.img.copy()
@@ -207,6 +210,10 @@ def exit_callback():
 	for t in m.g.threads:
 		t.join()
 
+def confirm_save():
+	m.confirm_save() 
+	dpg.configure_item("overwrite_win", show=False)
+
 init(g)
 dpg.create_context()
 dpg.create_viewport(title='img gui', width=win_dimensions[0], height=win_dimensions[1])
@@ -222,66 +229,72 @@ with dpg.window(tag="img_window"):
 	dpg.set_primary_window("img_window", True)
 
 with dpg.window(tag="ctlwindow", label="", no_close=True, min_size=(250,250)):
-	with dpg.tab_bar(tag="tabbar"):
+	with dpg.collapsing_header(label="gaussian blur", tag="gmenu", default_open=True):
+		dpg.add_checkbox(label="on", tag="gbox", callback=box_cb)
+		dpg.add_slider_int(label="ksize", tag="gbar_k", default_value=0,  max_value=21)
+		dpg.add_slider_float(label="sigma", tag="gbar_s", default_value=0.,  max_value=6)
 
-		with dpg.tab(tag="tb1", label="Image Proc"):
-			with dpg.collapsing_header(label="gaussian blur", tag="gmenu", default_open=True):
-				dpg.add_checkbox(label="on", tag="gbox", callback=box_cb)
-				dpg.add_slider_int(label="ksize", tag="gbar_k", default_value=0,  max_value=21)
-				dpg.add_slider_float(label="sigma", tag="gbar_s", default_value=0.,  max_value=6)
+	with dpg.collapsing_header(label="canny", tag="cmenu", default_open=True):
+		dpg.add_checkbox(label="on", tag="cbox", callback=box_cb)
+		dpg.add_slider_float(label="thresh_l", tag="cbar1", default_value=50.,  max_value=200)
+		dpg.add_slider_float(label="thresh_h", tag="cbar2", default_value=100.,  max_value=200)
 
-			with dpg.collapsing_header(label="canny", tag="cmenu", default_open=True):
-				dpg.add_checkbox(label="on", tag="cbox", callback=box_cb)
-				dpg.add_slider_float(label="thresh_l", tag="cbar1", default_value=50.,  max_value=200)
-				dpg.add_slider_float(label="thresh_h", tag="cbar2", default_value=100.,  max_value=200)
+	with dpg.collapsing_header(label="dilate", tag="mmenu", default_open=True):
+		with dpg.group(horizontal=True):
+			dpg.add_checkbox(label="on", tag="mbox", callback=box_cb)
+		dpg.add_slider_int(label="kernel", tag="mbark", min_value=2, max_value=9)
+		dpg.add_slider_int(label="iterations", tag="mbari", min_value=1, max_value=8)
 
-			with dpg.collapsing_header(label="dilate", tag="mmenu", default_open=True):
-				with dpg.group(horizontal=True):
-					dpg.add_checkbox(label="on", tag="mbox", callback=box_cb)
-				dpg.add_slider_int(label="kernel", tag="mbark", min_value=2, max_value=9)
-				dpg.add_slider_int(label="iterations", tag="mbari", min_value=1, max_value=8)
+	with dpg.collapsing_header(label="tone", tag="hmenu", default_open=True):
+		with dpg.group(horizontal=True):
+			dpg.add_checkbox(label="on", tag="hbox", callback=box_cb)
+			dpg.add_checkbox(label="invert", tag="ibox")
+		dpg.add_slider_float(label="hue", tag="hbar", default_value=0., max_value=1)
+		dpg.add_slider_float(label="sat", tag="sbar", default_value=1., max_value=1)
 
-			with dpg.collapsing_header(label="tone", tag="hmenu", default_open=True):
-				with dpg.group(horizontal=True):
-					dpg.add_checkbox(label="on", tag="hbox", callback=box_cb)
-					dpg.add_checkbox(label="invert", tag="ibox")
-				dpg.add_slider_float(label="hue", tag="hbar", default_value=0., max_value=1)
-				dpg.add_slider_float(label="sat", tag="sbar", default_value=1., max_value=1)
+	dpg.add_separator()
+	with dpg.group(horizontal=True):
+		dpg.add_button(label="apply", tag="apply", callback=apply_rev_cb)
+		dpg.add_button(label="revert", tag="revert", callback=apply_rev_cb)
 
-			dpg.add_separator()
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="apply", tag="apply", callback=apply_rev_cb)
-				dpg.add_button(label="revert", tag="revert", callback=apply_rev_cb)
+	dpg.add_separator()
+	with dpg.group(horizontal=True):
+		dpg.add_button(label="load img", tag="loadfilebutton", callback=file_callback)
+		dpg.add_button(label="load dir", tag="loaddirbutton", callback=dir_callback)
+		with dpg.group(horizontal=True, tag="dirnav", show=False):
+			dpg.add_button(label="<<", tag="lfile", callback=load_dirfile)
+			dpg.add_button(label=">>", tag="rfile", callback=load_dirfile)
+		dpg.add_text("", tag="file_text")
+		dpg.set_value("file_text",os.path.basename(g.fname))
+	dpg.add_button(label="save img", tag="savebutton", callback=save_cb)
 
-			dpg.add_separator()
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="file", tag="loadfilebutton", callback=file_callback)
-				dpg.add_button(label="dir", tag="loaddirbutton", callback=dir_callback)
-				with dpg.group(horizontal=True, tag="dirnav", show=False):
-					dpg.add_button(label="<<", tag="lfile", callback=load_dirfile)
-					dpg.add_button(label=">>", tag="rfile", callback=load_dirfile)
-				dpg.add_text("", tag="file_text")
-				dpg.set_value("file_text",os.path.basename(g.fname))
-			dpg.add_button(label="save", tag="savebutton", callback=save_cb)
+	with dpg.group(horizontal=True, tag="zbutton", show=True):
+		dpg.add_button(label="load z-img", tag="m_zloadfilebutton", callback=m.file_callback)
+		dpg.add_text("", tag="m_zfile_text")
+	with dpg.group(horizontal=True, tag="z_select", show=False):
+		dpg.add_radio_button(tag="zradio", items=('hue', 'value'), horizontal=True, callback=m.z_select)
+		dpg.add_checkbox(label="invert", tag="zinv", callback=m.z_select)
 
-		with dpg.tab(tag="tb2", label="Model Gen"):
-			with dpg.group(horizontal=True):
-				dpg.add_button(label="load img file", tag="m_loadfilebutton", callback=m.file_callback)
-				dpg.add_text("", tag="m_file_text")
-			with dpg.group(horizontal=True, tag="zbutton", show=False):
-				dpg.add_button(label="load z-img file", tag="m_zloadfilebutton", callback=m.file_callback)
-				dpg.add_text("", tag="m_zfile_text")
-			with dpg.group(horizontal=True, tag="pbutton", show=False):
-				dpg.add_button(label="proc contours", callback=m.proc_contours, tag="pcontbutton")
-			with dpg.group(horizontal=True, tag="serve", show=True):
-				dpg.add_button(label="serve model", callback=m.serve)
-				dpg.add_text("", tag="serve_text")
-			with dpg.group(horizontal=True, tag="savelines", show=False):
-				dpg.add_button(label="save line model", callback=m.save_model)
-			with dpg.group(horizontal=True, tag="savelineimg", show=False):
-				dpg.add_button(label="save line image", callback=m.save_img)
-			with dpg.group(horizontal=True):
-				dpg.add_text("", tag="line_model_text")
+	with dpg.group(horizontal=True, tag="pbutton", show=True):
+		dpg.add_button(label="proc contours", callback=m.proc_contours, tag="pcontbutton")
+		dpg.add_text("", tag="lines_text")
+	with dpg.group(horizontal=True, tag="savelines", show=False):
+		dpg.add_button(label="save model", callback=m.save_model)
+	with dpg.group(horizontal=True, tag="serve", show=True):
+		dpg.add_button(label="serve model", callback=m.serve)
+		dpg.add_text("", tag="serve_text")
+	with dpg.group(horizontal=True, tag="savelineimg", show=False):
+		dpg.add_button(label="save line image", callback=m.save_img)
+	with dpg.group(horizontal=True):
+		dpg.add_text("", tag="line_model_text")
+
+	with dpg.window(tag="overwrite_win", modal=True, show=False, no_title_bar=True):
+		dpg.add_text("", tag="overwrite_text")
+		dpg.add_text("overwrite file?")
+		dpg.add_separator()
+		with dpg.group(horizontal=True):
+			dpg.add_button(label="yes", width=75, callback=confirm_save)
+			dpg.add_button(label="no", width=75, callback=lambda: dpg.configure_item("overwrite_win", show=False))
 
 dpg.setup_dearpygui()
 dpg.show_viewport()
