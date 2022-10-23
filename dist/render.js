@@ -167,9 +167,12 @@ function canvasrender(s, t){
     let mat = mat_mul_4(s.vertices, s.t_mat || idmat); 
     // let ii = 0;
     // proc_rows(mat, (vec)=>{
-    // 	ii++;
-    // 	vec[2] = vec[2]*(.6+.4*cos(.2*t*Math.log(ii*.2)))+.5;
-    // })
+    //     ii++;
+    //     // vec[2] = vec[2]*(.6+.4*cos(.2*t*Math.log(ii*.2)))+.5;
+    //     vec[1] *= .9+.1*cos(t*(.8+ii*.001))
+    //     vec[2] *= .9+.1*sin(t*(.8+ii*.001))
+    //     // vec[1] *= sin(t)
+    // });
     if(s.v_mat) mat = mat_mul_4(mat, s.v_mat);
     if(s.p_mat) mat = mat_mul_4w(mat, s.p_mat);
 
