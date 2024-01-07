@@ -5,9 +5,10 @@ import lines from './lines.js';
 
 const ww = 500, wh = 500;
 const canvas = document.getElementById('canv');
+canvas.style.cursor = 'none'
 const ctx = canvas.getContext('2d');
 canvas.width = ww; canvas.height = wh;
-
+// console.log(lines);
 let obj_v = lines.v;
 let obj_i = lines.e;
 // for(let v of obj_v){

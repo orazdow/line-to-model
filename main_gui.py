@@ -204,11 +204,11 @@ def load_dirfile(sender, data):
 	load_file(g.fname)
 
 def exit_callback():
-	cv.destroyAllWindows()
 	if m.g.server: 
 		m.g.server.shutdown()
 	for t in m.g.threads:
 		t.join()
+	cv.destroyAllWindows()
 
 def confirm_save():
 	m.confirm_save() 
@@ -278,8 +278,16 @@ with dpg.window(tag="ctlwindow", label="", no_close=True, min_size=(250,250)):
 	with dpg.group(horizontal=True, tag="pbutton", show=True):
 		dpg.add_button(label="proc contours", callback=m.proc_contours, tag="pcontbutton")
 		dpg.add_text("", tag="lines_text")
+
+	with dpg.collapsing_header(label="proc ctl", tag="pctl", default_open=False):
+		with dpg.group():
+			dpg.add_slider_float(label="loop cutoff", tag="loopf", default_value=0.6667, min_value=.5, max_value=1, callback=m.pctl_callback)
+			dpg.add_slider_float(label="len min", tag="d1", default_value=0.3, min_value=.2, max_value=1, callback=m.pctl_callback)
+			dpg.add_slider_float(label="len max", tag="d2", default_value=1, min_value=.1, max_value=2, callback=m.pctl_callback)
+
 	with dpg.group(horizontal=True, tag="savelines", show=False):
 		dpg.add_button(label="save model", callback=m.save_model)
+		dpg.add_text("0", tag="model_text")
 	with dpg.group(horizontal=True, tag="serve", show=True):
 		dpg.add_button(label="serve model", callback=m.serve)
 		dpg.add_text("", tag="serve_text")

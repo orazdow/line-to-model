@@ -19,7 +19,11 @@ g = SimpleNamespace(
 	zinv = False,
 	lines = None,
 	threads = [],
-	server = None
+	server = None,
+	filt_n = 0,
+	d1 = .3,
+	d2 = 1,
+	loopf = .6667
 )
 
 def normalize(coord, res):
@@ -47,12 +51,41 @@ def make_indices(lines):
 		if(len(e) > 0): _e.append(e)
 	return {'v':_v, 'e':_e}
 
+def colinear(a, b):
+	return False
+
+def dist(a, b):
+	return m.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2)
+
+def make_indices2(lines):
+	v, e, i = [], [], 1 
+	for a in lines:
+		for el in a: v.append(el)
+	e.append([0, 1])
+	while i+1 < len(v):
+		if  dist(v[i], v[i+1]) < g.d1:
+			e.append([i, i+1])
+			i = i+1
+		else:
+			if dist(v[i+1], v[i+2]) < g.d2:
+				e.append([i+1, i+2])
+			i = i+2
+	return {'v': v, 'e': e}
+
 def display(mat):
 	cv.imshow('img', mat)
 	cv.waitKey(0)
 
+def pctl_callback(sender, data):
+	if sender == "loopf":
+		g.loopf = dpg.get_value("loopf")
+	if sender == "d1":
+		g.d1 = dpg.get_value("d1")
+	if sender == "d2":
+		g.d2 = dpg.get_value("d2")
+
 def write_js(path, lines, fname=None):
-	obj = json.dumps(make_indices(lines), indent = 4)
+	obj = json.dumps(make_indices2(lines), indent = 4)
 	obj = 'const lines = '+obj+'\nexport default lines;'
 	if fname:
 		obj = ('/*@ %s */\n\n' % fname) + obj
@@ -109,7 +142,7 @@ def proc_contours():
 	mat = np.zeros((img.shape[0], img.shape[1], 3), np.uint8)
 	for c in contours:
 		poly = cv.approxPolyDP(c, 3, False)
-		poly = poly[:int(len(poly)/1.5)]
+		poly = poly[:int(len(poly)*g.loopf)]
 		arr = [normalize(get_channel(e[0].tolist()+[0, 1], g.zimg, g.zhsv), img.shape) for e in poly]
 		arr = [[truncate(el, 6) for el in a] for a in arr]
 		lines.append(arr)
